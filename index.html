@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Exambro Pro - Kelas 9</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #3b82f6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+        }
+
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg); overflow: hidden;
+            color: #1e293b;
+        }
+        
+        #login-page {
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; width: 100%; position: absolute; z-index: 10;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        }
+
+        .card {
+            background: white; padding: 30px; border-radius: 24px;
+            box-shadow: 0 20px 25px rgba(0,0,0,0.2);
+            width: 90%; max-width: 400px; text-align: center;
+        }
+
+        .logo-area {
+            width: 60px; height: 60px; background: var(--accent);
+            border-radius: 18px; margin: 0 auto 15px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: bold; font-size: 22px;
+            box-shadow: 0 8px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        h2 { margin: 0; color: var(--primary); font-size: 20px; }
+        .input-group { text-align: left; margin-bottom: 12px; }
+        label { font-size: 12px; font-weight: 600; color: #475569; }
+
+        input, select {
+            width: 100%; padding: 12px; margin-top: 5px;
+            border: 2px solid #e2e8f0; border-radius: 12px; box-sizing: border-box;
+            background: #f1f5f9; outline: none;
+        }
+
+        input:focus { border-color: var(--accent); background: white; }
+
+        .btn-start {
+            width: 100%; padding: 15px; background: var(--accent);
+            color: white; border: none; border-radius: 12px;
+            font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.3s;
+        }
+
+        /* Exam Header & Timer */
+        #exam-container { display: none; width: 100vw; height: 100vh; background: white; }
+        
+        .exam-header {
+            height: 60px; background: white; border-bottom: 2px solid #e2e8f0;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 20px;
+        }
+
+        .timer-box {
+            background: #fee2e2; color: var(--danger);
+            padding: 5px 15px; border-radius: 8px;
+            font-weight: bold; font-family: monospace; font-size: 18px;
+            border: 1px solid #fecaca;
+        }
+
+        iframe { width: 100%; height: calc(100% - 62px); border: none; }
+
+        #warning-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.98); color: white;
+            z-index: 9999; text-align: center; justify-content: center; align-items: center;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-page">
+        <div class="card">
+            <div class="https://ibb.co.com/Cpz1Ssxp">EB</div>
+            <h2>Ujian Sekolah IPS Kelas 9</h2>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">Silahkan lengkapi data diri</p>
+            
+            <div class="input-group">
+                <label>Nama Lengkap</label>
+                <input type="text" id="nama" placeholder="Nama Lengkap Sesuai Ijazah">
+            </div>
+
+            <div class="input-group">
+                <label>Kelas & No. Peserta</label>
+                <div style="display: flex; gap: 10px;">
+                    <select id="kelas" style="flex: 1;">
+                        <option value="9A">9A</option>
+                        <option value="9B">9B</option>
+                        <option value="9C">9C</option>
+                    </select>
+                    <input type="text" id="no_peserta" style="flex: 2;" placeholder="No. Peserta">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Durasi Ujian (Menit)</label>
+                <input type="number" id="durasi" value="90">
+            </div>
+
+            <button class="btn-start" onclick="startExam()">Mulai Ujian</button>
+        </div>
+    </div>
+
+    <div id="exam-container">
+        <div class="exam-header">
+            <div>
+                <div id="display-nama" style="font-weight: 600; font-size: 14px;"></div>
+                <div style="font-size: 11px; color: var(--success);">● Koneksi Terhubung</div>
+            </div>
+            <div class="timer-box" id="timer">00:00:00</div>
+        </div>
+        <iframe id="exam-frame" src=""></iframe>
+    </div>
+
+    <div id="warning-overlay">
+        <h2 style="color: var(--danger);">PELANGGARAN TERDETEKSI!</h2>
+        <p>Sistem mendeteksi Anda mencoba keluar dari aplikasi.</p>
+        <button onclick="kembaliKeUjian()" class="btn-start" style="width: auto; padding: 10px 30px;">Kembali</button>
+    </div>
+
+    <script>
+        // --- KONFIGURASI ---
+        const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/XXXXX/viewform"; // GANTI LINK DISINI
+        
+        let timerInterval;
+        let violationCount = 0;
+
+        function startExam() {
+            const nama = document.getElementById('nama').value;
+            const kelas = document.getElementById('kelas').value;
+            const no = document.getElementById('no_peserta').value;
+            const menit = document.getElementById('durasi').value;
+
+            if (!nama || !no) return alert("Data tidak lengkap!");
+
+            // Masuk Fullscreen
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) elem.requestFullscreen();
+
+            // Set UI
+            document.getElementById('login-page').style.display = 'none';
+            document.getElementById('exam-container').style.display = 'block';
+            document.getElementById('display-nama').innerText = `${nama} | ${kelas}`;
+            document.getElementById('exam-frame').src = GOOGLE_FORM_URL;
+
+            // Jalankan Timer
+            startTimer(menit * 60);
+        }
+
+        function startTimer(duration) {
+            let timer = duration, hours, minutes, seconds;
+            timerInterval = setInterval(function () {
+                hours = parseInt(timer / 3600, 10);
+                minutes = parseInt((timer % 3600) / 60, 10);
+                seconds = parseInt(timer % 60, 10);
+
+                hours = hours < 10 ? "0" + hours : hours;
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                document.getElementById('timer').textContent = hours + ":" + minutes + ":" + seconds;
+
+                if (--timer < 0) {
+                    clearInterval(timerInterval);
+                    alert("Waktu Ujian Telah Habis!");
+                    location.reload();
+                }
+            }, 1000);
+        }
+
+        function kembaliKeUjian() {
+            document.getElementById('warning-overlay').style.display = 'none';
+            if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+        }
+
+        window.onblur = function() {
+            violationCount++;
+            document.getElementById('warning-overlay').style.display = 'flex';
+        };
+
+        // Blokir Klik Kanan
+        document.addEventListener('contextmenu', e => e.preventDefault());
+    </script>
+</body>
+</html>
